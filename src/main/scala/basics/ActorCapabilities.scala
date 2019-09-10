@@ -60,4 +60,111 @@ object ActorCapabilities extends App {
 
 
 
+  /*
+    Exercise 1: Implement a counter Actor
+   */
+
+
+  // Best practice to create Messages in Companion object of Actor that supports them
+  // DOMAIN of the counter
+  object Counter {
+    case object Increment
+    case object Decrement
+    case object Print
+  }
+
+  class Counter() extends Actor {
+
+    import Counter._
+    var counter: Int = 0
+
+    override def receive: Receive = {
+
+      case Increment => counter +=  1
+      case Decrement => counter -=  1
+      case Print => println("Value of count for CounterActor is : " + counter)
+    }
+  }
+
+  import Counter._
+  val counterActor = system.actorOf(Props[Counter], "Counter1")
+
+  counterActor ! Increment
+  counterActor ! Print
+
+  (1 to 5).foreach(_ => counterActor ! Increment)
+  (1 to 3).foreach(_ => counterActor ! Decrement)
+
+  counterActor ! Print
+
+  /*
+    Exercise 2: A Bank account as an Actor
+    Receives
+      - Deposit Amount
+      - Withdraw Amount
+      - Statement
+    Replies
+      - Success
+      - Failure
+   */
+
+  object BankAccount {
+    case class Deposit(amount: Int)
+    case class Withdraw(amount: Int)
+    case object Statement
+
+    case class TransactionSuccess(message: String)
+    case class TransactionFailure(message: String)
+  }
+
+
+  class BankAccount extends Actor {
+
+    import BankAccount._
+
+    var funds = 0
+
+    override def receive: Receive = {
+      case Deposit(amount) =>
+        if (amount < 0) sender() ! TransactionFailure("Invalid Deposit Amount")
+        else {
+          funds +=amount
+          sender() ! TransactionSuccess(s"Successfully Deposited $amount")
+        }
+      case Withdraw(amount) =>
+        if (amount < 0) sender() ! TransactionFailure("Invalid Withdraw Amount")
+        else if (amount > funds) sender() ! TransactionFailure("Insufficient funds")
+        else {
+          funds -=amount
+          sender() ! TransactionSuccess(s"Successfully Withdraw $amount ")
+        }
+      case Statement => sender() ! s"Your balance is $funds"
+    }
+  }
+
+  object Person {
+    case class LiveTheLife(account: ActorRef)
+  }
+
+  class Person extends Actor {
+
+    import Person._
+    import BankAccount._
+
+    override def receive: Receive = {
+      case LiveTheLife(account) =>
+        account ! Deposit(10000)
+        account ! Withdraw(900000)
+        account ! Withdraw(500)
+        account ! Statement
+      case message => println(message.toString)
+    }
+  }
+
+  val account = system.actorOf(Props[BankAccount], "BankAccount")
+  val person = system.actorOf(Props[Person], "Billionaire")
+
+  import Person._
+  person ! LiveTheLife(account)
+
 }
