@@ -1,5 +1,10 @@
 package basics
 
+/**
+  * Lecture 9, 10 [Actors, Messages and Behaviors (part 2)]
+  * - https://www.udemy.com/course/akka-essentials/learn/lecture/12418638#overview
+  */
+
 import akka.actor.{Actor, ActorRef, ActorSystem, Props}
 
 object ActorCapabilities extends App {
@@ -21,26 +26,27 @@ object ActorCapabilities extends App {
 
       // 4
       case WirelessPhoneMessage(content, ref) => ref forward (content + "s") // keep the original sender of WirelessPhoneMessage
+      // As per our example, Bob will receive `(content + "s")` with `me (Big Context Or Kamran)` as the Sender
     }
   }
 
   val system = ActorSystem("actorCapabilitiesDemo")
   val simpleActor = system.actorOf(Props[SimpleActor], "simpleActor")
 
-  simpleActor ! "hello, actor"
+  simpleActor ! "hello, actor" // Actor[akka://actorCapabilitiesDemo/user/simpleActor#1875107413] [Simple Actor] I have received hello, actor
 
   // 1 - Messages can be of any Type
     // 1a - Message must be IMMUTABLE
     // 2b - Messages must be SERIALIZABLE
-  simpleActor ! 42
+  simpleActor ! 42 // Actor[akka://actorCapabilitiesDemo/user/simpleActor#1875107413] [Simple Actor] I have received a number: 42
 
   // In practice use case classes and case objects
   case class SpecialMessage(contents: String)
-  simpleActor ! SpecialMessage("Special Content")
+  simpleActor ! SpecialMessage("Special Content") // [Simple Actor] I have received a SpecialMessage with content: Special Content
 
   // 2 Actors have information about their context i.e. `context` object and about themselves i.e. `context.self` === `this` (in OOP)
   case class SendMessageToYourself(content: String)
-  simpleActor ! SendMessageToYourself("I am an actor and I'm proud of it")
+  simpleActor ! SendMessageToYourself("I am an actor and I'm proud of it") // Actor[akka://actorCapabilitiesDemo/user/simpleActor#1875107413] [Simple Actor] I have received I am an actor and I'm proud of it
 
   // 3 Actors can Reply to messages
   val alice = system.actorOf(Props[SimpleActor], "alice")
@@ -49,15 +55,16 @@ object ActorCapabilities extends App {
 
   case class SayHiTo(ref: ActorRef)
 
-  alice ! SayHiTo(bob)
+  alice ! SayHiTo(bob) // Actor[akka://actorCapabilitiesDemo/user/alice#1729870024] [Simple Actor] I have received Hello, there
 
   // 4 Dead Letters
   alice ! "Hi!" // i.e. reply to me (explicit value passed is null). So message will be sent to `deadLetters` which is a fake actor which receives messages not sent to anyone
+  // ^ prints [INFO] [07/23/2020 20:34:51.732] [actorCapabilitiesDemo-akka.actor.default-dispatcher-3] [akka://actorCapabilitiesDemo/deadLetters] Message [java.lang.String] from Actor[akka://actorCapabilitiesDemo/user/alice#-1896170253] to Actor[akka://actorCapabilitiesDemo/deadLetters] was not delivered. [1] dead letters encountered. If this is not an expected behavior, then [Actor[akka://actorCapabilitiesDemo/deadLetters]] may have terminated unexpectedly,
+  // This logging can be turned off or adjusted with configuration settings 'akka.log-dead-letters' and 'akka.log-dead-letters-during-shutdown'.
 
   // 5 Forwarding Messages i.e. Alice forwarding message to Bob while keeping original sender
   case class WirelessPhoneMessage(content: String, ref: ActorRef)
-  alice ! WirelessPhoneMessage("Hi", bob)
-
+  alice ! WirelessPhoneMessage("Hi", bob) // Prints -> Actor[akka://actorCapabilitiesDemo/user/bob#-1022469193] [Simple Actor] I have received His
 
 
   /*
@@ -153,10 +160,10 @@ object ActorCapabilities extends App {
 
     override def receive: Receive = {
       case LiveTheLife(account) =>
-        account ! Deposit(10000)
-        account ! Withdraw(900000)
-        account ! Withdraw(500)
-        account ! Statement
+        account ! Deposit(10000) // TransactionSuccess(Successfully Deposited 10000)
+        account ! Withdraw(900000) // TransactionFailure(Insufficient funds)
+        account ! Withdraw(500) // TransactionSuccess(Successfully Withdraw 500 )
+        account ! Statement // Your balance is 9500
       case message => println(message.toString)
     }
   }

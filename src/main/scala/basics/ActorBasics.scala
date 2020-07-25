@@ -15,15 +15,19 @@ object ActorBasics extends App {
 
   /*
     ActorSystem
-    - Datastructure which controls Number of threads under the hood. These threads are allocated to running actors
+    - Data Structure which controls Number of threads under the hood. These threads are allocated to running actors
     - Have one ActorSystem per instance (unless we have reason to create more)
    */
 
-  // Part 1: Create Actor System
+  /**
+    * Part 1: Create Actor System
+    */
   val actorSystem = ActorSystem("firstActorSystem")
   println(actorSystem.name)
 
-  // Part2: Create Actors
+  /**
+    * Part2: Create Actors
+    */
 
   /*
     Actors
@@ -34,7 +38,7 @@ object ActorBasics extends App {
     - Actors are really encapsulated (we can invade their mind / Force them to provide the info we need)
    */
 
-  // word count actor
+  // word count actors
   class WordCountActor extends Actor {
 
     // internal data
@@ -49,7 +53,9 @@ object ActorBasics extends App {
     }
   }
 
-  // Part 3 Instantiating the actor
+  /**
+    * Part 3 Instantiating the actor
+    */
     // wordCounter is ActorRef (hence we can NOT poke data of an Actor neither can call their method)
     // We can NOT instantiate actor class by "new" keyword (i.e. by hand)
   val wordCounter = actorSystem.actorOf(Props[WordCountActor], "wordCounter")
