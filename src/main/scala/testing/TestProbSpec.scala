@@ -5,7 +5,7 @@ import akka.testkit.{ImplicitSender, TestKit, TestProbe}
 import org.scalatest.{BeforeAndAfterAll, WordSpecLike}
 
 /**
-  * Lecture 18 [Test Probes]
+  * Lecture 20 [Test Probes]
   *
   * Ref
   * - https://www.udemy.com/course/akka-essentials/learn/lecture/12418662#overview
