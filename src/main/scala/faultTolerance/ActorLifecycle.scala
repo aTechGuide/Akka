@@ -3,7 +3,7 @@ package faultTolerance
 import akka.actor.{Actor, ActorLogging, ActorSystem, PoisonPill, Props}
 
 /**
-  * Lecture 24 [Actor Lifecycle]
+  * Lecture 25 [Actor Lifecycle]
   * - In Notes
   *
   * Ref
@@ -86,7 +86,7 @@ object ActorLifecycle extends App {
 
   // And this is a part of the default supervision strategy
   // The default supervision strategy says the following,
-  // If an actress threw an exception while processing a message this message which caused the exception to be thrown is removed from the queue
+  // If an actor threw an exception while processing a message this message which caused the exception to be thrown is removed from the queue
   // and not put back in the mailbox again. And the Actor is restarted which means the mailbox is untouched.
 
 }
