@@ -138,11 +138,6 @@ class SupervisionSpec extends TestKit(ActorSystem("SupervisionSpec"))
       secondChild ! Report
       expectMsg(0)
 
-
-
-
-
-
     }
   }
 
@@ -170,6 +165,7 @@ object SupervisionSpec {
 
   class NoDeathOnRestartSupervisor extends Supervisor {
     override def preRestart(reason: Throwable, message: Option[Any]): Unit = {
+      // super.preRestart(reason, message) <- This is the default behaviour
       // empty
     }
   }
