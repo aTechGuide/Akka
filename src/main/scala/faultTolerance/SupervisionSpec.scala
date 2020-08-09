@@ -150,8 +150,11 @@ object SupervisionSpec {
   class Supervisor extends Actor {
 
     override val supervisorStrategy: SupervisorStrategy = OneForOneStrategy() {
-      case _: NullPointerException => Restart
-      case _: IllegalArgumentException => Stop
+
+      // We are overriding Supervision Strategy based on the exceptions that child actors can throw
+
+      case _: NullPointerException => Restart // Restarting the child
+      case _: IllegalArgumentException => Stop // Stop the child
       case _: RuntimeException => Resume
       case _: Exception => Escalate
     }

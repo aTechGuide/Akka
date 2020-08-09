@@ -1,7 +1,7 @@
-# Akka
+# Akka Sandbox
+Akka Code Snippets
 
-## Topic Details
-
-- [Actor Basics](https://github.com/aTechGuide/Akka/commit/d9943f9adcc9759761a60f9f12f9d95c4dec6610)
-- [Actor: Message Type, Context, Actor Reply, Dead Letters, Forwarding](https://github.com/aTechGuide/Akka/commit/5afb688ecf79174aa6f042a05410a78ba1069d8b)
-- [Akka Basics, Changing Actor Behaviour]()
+## Resources
+- [Akka Essentials with Scala | Rock the JVM](https://www.udemy.com/course/akka-essentials/)
+- [Akka Persistence with Scala | Rock the JVM](https://www.udemy.com/course/akka-persistence/)
+- [rockthejvm/udemy-akka-persistence](https://github.com/rockthejvm/udemy-akka-persistence)
