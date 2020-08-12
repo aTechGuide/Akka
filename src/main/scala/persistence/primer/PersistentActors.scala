@@ -7,7 +7,7 @@ import akka.persistence.PersistentActor
 import com.typesafe.config.ConfigFactory
 
 /**
-  * Persistence Lecture 5 [Persistence Actors]
+  * Persistence Lecture 6, 7 [Persistence Actors]
   *
   * Ref
   * - https://www.udemy.com/course/akka-persistence/learn/lecture/13002418s
