@@ -115,7 +115,7 @@ object Snapshots extends App {
 
   }
 
-  val system = ActorSystem("Snapshots", ConfigFactory.load("application-persistance.conf"))
+  val system = ActorSystem("Snapshots", ConfigFactory.load("application-persistence.conf"))
   val chat = system.actorOf(Chat.props("daniel123", "martin"))
 
 

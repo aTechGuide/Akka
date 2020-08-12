@@ -75,7 +75,7 @@ object PersistentActorsExercise extends App {
 
   }
 
-  val system = ActorSystem("PersistentActorsExercise", ConfigFactory.load("application-persistance.conf"))
+  val system = ActorSystem("PersistentActorsExercise", ConfigFactory.load("application-persistence.conf"))
   val voteStation = system.actorOf(Props[VotingStation], "voteStation")
 
   val votesMap = Map[String, String](

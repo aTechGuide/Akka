@@ -138,7 +138,7 @@ object PersistentActors extends App {
     }
   }
 
-  val system = ActorSystem("PersistentActors", ConfigFactory.load("application-persistance.conf"))
+  val system = ActorSystem("PersistentActors", ConfigFactory.load("application-persistence.conf"))
   val accountant = system.actorOf(Props[Accountant], "accountant")
 
   for (i <- 1 to 10) {

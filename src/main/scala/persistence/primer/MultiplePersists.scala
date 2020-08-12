@@ -83,7 +83,7 @@ object MultiplePersists extends App {
     }
   }
 
-  val system = ActorSystem("MultiplePersists", ConfigFactory.load("application-persistance.conf"))
+  val system = ActorSystem("MultiplePersists", ConfigFactory.load("application-persistence.conf"))
   val taxAuthority = system.actorOf(Props[TaxAuthority], "HMRC")
   val accountant = system.actorOf(DiligentAccountant.props("UK42432 4323", taxAuthority), "accountant")
 
