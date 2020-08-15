@@ -4,19 +4,19 @@ import akka.actor.{ActorSystem, Props}
 import com.typesafe.config.ConfigFactory
 
 /**
-  * Persistence Lecture 13 [Local Stores]
+  * Persistence Lecture 14 [Postgres SQL]
   *
-  * Level DB
-  * - It is a file based key-value store [Written by google]
-  * - Supports Compaction
+  * SQL inside container
+  * - select * from public.journal;
+  * - select * from public.snapshot;
   *
   * Ref
-  * - https://www.udemy.com/course/akka-persistence/learn/lecture/13002460#overview
+  * - https://www.udemy.com/course/akka-persistence/learn/lecture/13002462
   */
 
-object LocalStores extends App {
+object Postgres extends App {
 
-  val system = ActorSystem("LocalStores", ConfigFactory.load("application-persistence.conf").getConfig("localStores"))
+  val system = ActorSystem("PostgresSystem", ConfigFactory.load("application-persistence.conf").getConfig("postgres"))
   val persistentActor = system.actorOf(Props[SimplePersistentActor], "persistentActor")
 
   for (i <- 1 to 10) {
