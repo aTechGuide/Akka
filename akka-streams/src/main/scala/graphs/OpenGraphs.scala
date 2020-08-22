@@ -2,8 +2,9 @@ package graphs
 
 import java.util.Date
 
+import akka.NotUsed
 import akka.actor.ActorSystem
-import akka.stream.{ActorMaterializer, ClosedShape, FanInShape2, FanOutShape2, FlowShape, SinkShape, SourceShape, UniformFanInShape, UniformFanOutShape}
+import akka.stream.{ActorMaterializer, ClosedShape, FanInShape2, FanOutShape2, FlowShape, Graph, SinkShape, SourceShape, UniformFanInShape, UniformFanOutShape}
 import akka.stream.scaladsl.{Broadcast, Concat, Flow, GraphDSL, RunnableGraph, Sink, Source, ZipWith}
 
 /**
@@ -26,13 +27,13 @@ object OpenGraphs extends App {
    */
 
   val firstSource = Source( 1 to 10)
-  val secondSource = Source( 42 to 1000)
+  val secondSource = Source( 42 to 60)
 
-  val sourceGraph = Source.fromGraph(
+  val sourceGraph: Source[Int, NotUsed] = Source.fromGraph(
     GraphDSL.create() { implicit builder =>
       import GraphDSL.Implicits._
 
-      val concat = builder.add(Concat[Int](2))
+      val concat: UniformFanInShape[Int, Int] = builder.add(Concat[Int](2))
 
       firstSource ~> concat
       secondSource ~> concat
@@ -43,7 +44,7 @@ object OpenGraphs extends App {
 
   sourceGraph
     .to(Sink.foreach[Int](println))
-    // .run()
+    .run()
 
   /*
     Complex Sink
@@ -55,7 +56,7 @@ object OpenGraphs extends App {
     GraphDSL.create() {implicit builder =>
       import GraphDSL.Implicits._
 
-      val broadcast = builder.add(Broadcast[Int](2))
+      val broadcast: UniformFanOutShape[Int, Int] = builder.add(Broadcast[Int](2))
 
       broadcast ~> sink1
       broadcast ~> sink2
@@ -64,24 +65,23 @@ object OpenGraphs extends App {
     }
   )
 
-  firstSource.to(sinkGraph)
-    //.run()
+//  firstSource.to(sinkGraph).run()
 
   /**
     * Complex Flow
     * Write your own flow that's composed of two other flows
     */
 
-  val incrementer = Flow[Int].map(_ + 1)
-  val multiplier = Flow[Int].map(_ * 10)
+  val incrementer: Flow[Int, Int, NotUsed] = Flow[Int].map(_ + 1)
+  val multiplier: Flow[Int, Int, NotUsed] = Flow[Int].map(_ * 10)
 
-  val flowGraph = Flow.fromGraph(
+  val flowGraph: Flow[Int, Int, NotUsed] = Flow.fromGraph(
     GraphDSL.create() { implicit builder =>
       import GraphDSL.Implicits._
 
       // Everything operates on SHAPES
-      val incrementerShape = builder.add(incrementer)
-      val multiplierShape = builder.add(multiplier)
+      val incrementerShape: FlowShape[Int, Int] = builder.add(incrementer)
+      val multiplierShape: FlowShape[Int, Int] = builder.add(multiplier)
 
       incrementerShape ~> multiplierShape
 
@@ -134,7 +134,7 @@ object OpenGraphs extends App {
    */
 
   // Step 1
-  val max3StaticGraph = GraphDSL.create() { implicit builder =>
+  val max3StaticGraph: Graph[UniformFanInShape[Int, Int], NotUsed]  = GraphDSL.create() { implicit builder =>
     import GraphDSL.Implicits._
 
     // Step 2 Define Auxiliary shapes
@@ -157,7 +157,7 @@ object OpenGraphs extends App {
   val maxSink = Sink.foreach[Int](x => println(s"Max is : $x"))
 
   // Step 1
-  val max3RunnableGraph = RunnableGraph.fromGraph(
+  val max3RunnableGraph: RunnableGraph[NotUsed] = RunnableGraph.fromGraph(
     GraphDSL.create() { implicit builder =>
       import GraphDSL.Implicits._
 
@@ -177,8 +177,7 @@ object OpenGraphs extends App {
     }
   )
 
-  max3RunnableGraph
-    //.run()
+  // max3RunnableGraph.run()
 
   // Same for FanOutShapes
 
@@ -195,7 +194,7 @@ object OpenGraphs extends App {
 
   case class Transaction(id: String, source: String, recipient: String, amount: Int, date: Date)
 
-  val transactionSource = Source( List(
+  val transactionSource: Source[Transaction, NotUsed] = Source( List(
     Transaction("43243243", "Paul", "Jim", 1000, new Date),
     Transaction("43243432243", "Daniel", "Jim", 100000, new Date),
     Transaction("43432243", "Jim", "Alice", 7000, new Date)
@@ -204,22 +203,23 @@ object OpenGraphs extends App {
   val bankProcessorSink = Sink.foreach[Transaction](println)
   val suspiciousAnalysisServiceSink = Sink.foreach[String](txnID => println(s"Suspicious Transaction ID: $txnID"))
 
-  val suspiciousTxnStaticGraph = GraphDSL.create() { implicit builder =>
-    import GraphDSL.Implicits._
+  val suspiciousTxnStaticGraph: Graph[FanOutShape2[Transaction, Transaction, String], NotUsed] =
+    GraphDSL.create() { implicit builder =>
+      import GraphDSL.Implicits._
 
-    // step 2 Define Shapes
-    val broadcast: UniformFanOutShape[Transaction, Transaction] = builder.add(Broadcast[Transaction](2))
-    val suspiciousTxnFilter = builder.add(Flow[Transaction].filter(_.amount > 10000))
-    val txnIdExtractor = builder.add(Flow[Transaction].map[String](_.id))
+      // step 2 Define Shapes
+      val broadcast: UniformFanOutShape[Transaction, Transaction] = builder.add(Broadcast[Transaction](2))
+      val suspiciousTxnFilter: FlowShape[Transaction, Transaction] = builder.add(Flow[Transaction].filter(_.amount > 10000))
+      val txnIdExtractor: FlowShape[Transaction, String] = builder.add(Flow[Transaction].map[String](_.id))
 
-    // Step 3: Tie Shapes
-    broadcast.out(0) ~> suspiciousTxnFilter ~> txnIdExtractor
+      // Step 3: Tie Shapes
+      broadcast.out(0) ~> suspiciousTxnFilter ~> txnIdExtractor
 
-    // Step 4
-    new FanOutShape2(broadcast.in, broadcast.out(1), txnIdExtractor.out)
+      // Step 4
+      new FanOutShape2(broadcast.in, broadcast.out(1), txnIdExtractor.out)
   }
 
-  val suspiciousTxnRunnableGraph = RunnableGraph.fromGraph(
+  val suspiciousTxnRunnableGraph: RunnableGraph[NotUsed] = RunnableGraph.fromGraph(
     GraphDSL.create() { implicit builder =>
       import GraphDSL.Implicits._
 
@@ -237,7 +237,6 @@ object OpenGraphs extends App {
     }
   )
 
-  suspiciousTxnRunnableGraph
-    .run()
+//  suspiciousTxnRunnableGraph.run()
 
 }

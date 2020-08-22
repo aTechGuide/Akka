@@ -2,7 +2,7 @@ package graphs
 
 import akka.{Done, NotUsed}
 import akka.actor.ActorSystem
-import akka.stream.{ActorMaterializer, ClosedShape}
+import akka.stream.{ActorMaterializer, ClosedShape, FanInShape2, UniformFanOutShape}
 import akka.stream.scaladsl.{Balance, Broadcast, Flow, GraphDSL, Merge, RunnableGraph, Sink, Source, Zip}
 
 import scala.concurrent.Future
@@ -21,7 +21,7 @@ object GraphBasics extends App {
   implicit val system: ActorSystem = ActorSystem("GraphBasics")
   implicit val materializer: ActorMaterializer = ActorMaterializer()
 
-  val input: Source[Int, NotUsed] = Source(1 to 1000)
+  val input: Source[Int, NotUsed] = Source(1 to 10)
   val incrementer: Flow[Int, Int, NotUsed] = Flow[Int].map(x => x + 1) // Hard Computations
   val multiplier: Flow[Int, Int, NotUsed] = Flow[Int].map(x => x * 10) // Hard Computations
   val output: Sink[(Int, Int), Future[Done]] = Sink.foreach[(Int, Int)](println)
@@ -32,8 +32,8 @@ object GraphBasics extends App {
       import GraphDSL.Implicits._
 
       // Step 2: Add necessary components of this graph
-      val broadcast = builder.add(Broadcast[Int](2)) // Fan-out operator
-      val zip = builder.add(Zip[Int, Int]) // fan-in operator
+      val broadcast: UniformFanOutShape[Int, Int] = builder.add(Broadcast[Int](2)) // Fan-out operator
+      val zip: FanInShape2[Int, Int, (Int, Int)] = builder.add(Zip[Int, Int]) // fan-in operator
 
       // Step 3: Tying up the components
       input ~> broadcast // Input feeds into broadcast
@@ -45,13 +45,14 @@ object GraphBasics extends App {
 
       // Step 4: Return a closed Shape
       ClosedShape // FREEZE the builder Shape
-      // After we returned the closed shape the builder becomes immutable and this shape will be used to constructing the graph
+      // After we returned the closed shape the builder becomes immutable and this shape will be used in constructing the graph
 
       // Returns a shape object
     } // static graph
   ) // Runnable Graph
 
-  // graph.run() // run the graph and materialize it
+//  val matValue: NotUsed = graph.run() // run the graph and materialize it
+//  println(s"Value returned is $matValue") // Prints -> Value returned is NotUsed
 
   /**
     * Exercise 1: Feed a source into 2 sinks at the same time
@@ -60,7 +61,7 @@ object GraphBasics extends App {
   val firstSink = Sink.foreach[Int](x => println(s"First Sink: $x"))
   val secondSink = Sink.foreach[Int](x => println(s"Second Sink: $x"))
 
-  val graph2 = RunnableGraph.fromGraph(
+  val graph2: RunnableGraph[NotUsed] = RunnableGraph.fromGraph(
     GraphDSL.create() { implicit builder =>
       import GraphDSL.Implicits._
 
@@ -95,7 +96,7 @@ object GraphBasics extends App {
     count + 1
   })
 
-  val graph3 = RunnableGraph.fromGraph(
+  val graph3: RunnableGraph[NotUsed] = RunnableGraph.fromGraph(
     GraphDSL.create() { implicit builder =>
       import GraphDSL.Implicits._
 

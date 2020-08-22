@@ -21,20 +21,22 @@ object GraphMaterializedValues extends App {
   implicit val system: ActorSystem = ActorSystem("OpenGraphs")
   implicit val materializer: ActorMaterializer = ActorMaterializer()
 
-  val wordSource = Source(List("Akka", "is", "awesome", "rock", "the", "jvm"))
+  val wordSource: Source[String, NotUsed] = Source(List("Akka", "is", "awesome", "rock", "the", "jvm"))
   val printerSink: Sink[String, Future[Done]] =  Sink.foreach[String](println)
-  val counterSink: Sink[String, Future[Int]] = Sink.fold[Int, String](0)((count, _) => count + 1) // Sink that counts how many strings get inside it and the `Sink.fold` is a sink that actually exposes materialized value.
+  val counterSink: Sink[String, Future[Int]] = Sink.fold[Int, String](0)((count, _) => count + 1)
+  // ^ Sink that counts how many strings get inside it and the `Sink.fold` is a sink that actually exposes materialized value.
 
   /*
       GOAL
       - I would like to create a composite component that acts like a Sink which prints out all strings which are lowercase
       - and also counts the strings that are short like less than five characters.
 
-      So we need this composite component that inside will have a small broadcast and one of the branches from that broadcast will filter out all the strings which are lowercase and then we'll feed them to the printer.
-      And the other branch of the broadcast will filter only the strings that are short and will feed that into the counter sink.
+      We need this composite component that inside will have a small broadcast
+      - one of the branches from that broadcast will filter out all the strings which are lowercase and then we'll feed them to the printer.
+      - The other branch of the broadcast will filter only the strings that are short and will feed that into the counter sink.
    */
   // Step 1
-  val complexWordSink = Sink.fromGraph(
+  val complexWordSink: Sink[String, Future[Int]] = Sink.fromGraph(
     GraphDSL.create(printerSink, counterSink)((printerMatValue, counterMatValue) => counterMatValue) { implicit builder => (printerShape, counterShape) =>
       import GraphDSL.Implicits._
 
@@ -52,7 +54,7 @@ object GraphMaterializedValues extends App {
     }
   )
 
-  val shortStringsCountFuture = wordSource.toMat(complexWordSink)(Keep.right)
+  val shortStringsCountFuture: Future[Int] = wordSource.toMat(complexWordSink)(Keep.right)
     .run()
 
   import system.dispatcher

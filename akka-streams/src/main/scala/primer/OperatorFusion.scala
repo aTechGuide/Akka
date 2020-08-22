@@ -1,8 +1,11 @@
 package primer
 
+import akka.{Done, NotUsed}
 import akka.actor.{Actor, ActorSystem, Props}
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Flow, Sink, Source}
+
+import scala.concurrent.Future
 
 /**
   * Streams Lecture 7 [Operator Fusion And Async Boundaries]
@@ -17,13 +20,13 @@ object OperatorFusion extends App {
   implicit val system: ActorSystem = ActorSystem("OperatorFusion")
   implicit val materializer: ActorMaterializer = ActorMaterializer()
 
-  val simpleSource = Source(1 to 1000)
-  val simpleFlow = Flow[Int].map(_ + 1)
-  val simpleFlow2 = Flow[Int].map(_ * 10)
-  val simpleSink = Sink.foreach[Int](println)
+  val simpleSource: Source[Int, NotUsed] = Source(1 to 1000)
+  val simpleFlow: Flow[Int, Int, NotUsed] = Flow[Int].map(_ + 1)
+  val simpleFlow2: Flow[Int, Int, NotUsed] = Flow[Int].map(_ * 10)
+  val simpleSink: Sink[Int, Future[Done]] = Sink.foreach[Int](println)
 
   // This runs on SAME ACTOR known as Operator / Component Fusion[As Akka Stream Components are based on Actors]
-  // This operator fusion mechanism is something that Akka streams does by default. Behind the scenes so that it improves throughput
+  // This operator fusion mechanism is something that Akka streams does by default behind the scenes so that it improves throughput
   // End result with such an AKKA stream is that a single CPU core will be used for the complete processing of every single element throughout the entire flow
   // simpleSource.via(simpleFlow).via(simpleFlow2).to(simpleSink).run()
 
@@ -59,15 +62,16 @@ object OperatorFusion extends App {
     x * 10
   }
 
-  // There's a two second time difference between any of these numbers. That's because both of these threads sleeps are operating on the same actor.
+  // There's a 2 second time difference between any of these numbers.
+  // That's because both of these threads sleeps are operating on the same actor.
   // simpleSource.via(complexFlow).via(complexFlow2).to(simpleSink).run()
 
   /**
     * So when operators are expensive it's worth making them run separately in parallel on different actors.
     * So for that we need to introduce the concept of an Async Boundary.
     */
-  // Async Boundary
 
+  // Async Boundary
   simpleSource.via(complexFlow).async // runs on one actor
     .via(complexFlow2).async // runs on another separate Actor
     .to(simpleSink) // runs on third Actor
