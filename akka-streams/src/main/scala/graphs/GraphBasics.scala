@@ -1,9 +1,11 @@
 package graphs
 
-import akka.NotUsed
+import akka.{Done, NotUsed}
 import akka.actor.ActorSystem
 import akka.stream.{ActorMaterializer, ClosedShape}
 import akka.stream.scaladsl.{Balance, Broadcast, Flow, GraphDSL, Merge, RunnableGraph, Sink, Source, Zip}
+
+import scala.concurrent.Future
 import scala.concurrent.duration._
 
 /**
@@ -19,13 +21,13 @@ object GraphBasics extends App {
   implicit val system: ActorSystem = ActorSystem("GraphBasics")
   implicit val materializer: ActorMaterializer = ActorMaterializer()
 
-  val input = Source(1 to 1000)
-  val incrementer = Flow[Int].map(x => x + 1) // Hard Computations
-  val multiplier = Flow[Int].map(x => x * 10) // Hard Computations
-  val output = Sink.foreach[(Int, Int)](println)
+  val input: Source[Int, NotUsed] = Source(1 to 1000)
+  val incrementer: Flow[Int, Int, NotUsed] = Flow[Int].map(x => x + 1) // Hard Computations
+  val multiplier: Flow[Int, Int, NotUsed] = Flow[Int].map(x => x * 10) // Hard Computations
+  val output: Sink[(Int, Int), Future[Done]] = Sink.foreach[(Int, Int)](println)
 
   // Step 1: Setting up the fundamentals for the graph
-  val graph = RunnableGraph.fromGraph(
+  val graph: RunnableGraph[NotUsed] = RunnableGraph.fromGraph(
     GraphDSL.create() { implicit builder: GraphDSL.Builder[NotUsed] => // builder = MUTABLE Data Structure
       import GraphDSL.Implicits._
 

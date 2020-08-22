@@ -67,15 +67,17 @@ object GraphMaterializedValues extends App {
 
   def enhanceFlow[A, B](flow: Flow[A, B, _]): Flow[A, B, Future[Int]] = {
 
-    val counterSink = Sink.fold[Int, B](0)((count, element) => count + 1)
+    val counterSink: Sink[B, Future[Int]] = Sink.fold[Int, B](0)((count, element) => count + 1)
 
     Flow.fromGraph(
       GraphDSL.create(counterSink) { implicit builder => counterSinkShape =>
         import GraphDSL.Implicits._
 
+        // Step 2
         val broadcast = builder.add(Broadcast[B](2))
         val originalFlowShape = builder.add(flow)
 
+        // Step 3
         originalFlowShape ~> broadcast ~> counterSinkShape
 
         FlowShape(originalFlowShape.in, broadcast.out(1))
@@ -87,7 +89,9 @@ object GraphMaterializedValues extends App {
   val simpleFlow: Flow[Int, Int, NotUsed] = Flow[Int].map(x => x)
   val simpleSink = Sink.ignore
 
-  val enhancedFlowCountFuture: Future[Int] = simpleSource.viaMat(enhanceFlow(simpleFlow))(Keep.right).toMat(simpleSink)(Keep.left)
+  val enhancedFlowCountFuture: Future[Int] = simpleSource
+    .viaMat(enhanceFlow(simpleFlow))(Keep.right)
+    .toMat(simpleSink)(Keep.left)
     .run()
 
   enhancedFlowCountFuture.onComplete {
