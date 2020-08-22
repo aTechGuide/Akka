@@ -1,8 +1,9 @@
 package primer
 
+import akka.{Done, NotUsed}
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
-import akka.stream.scaladsl.{Flow, Sink, Source}
+import akka.stream.scaladsl.{Flow, RunnableGraph, Sink, Source}
 
 import scala.concurrent.Future
 
@@ -21,26 +22,26 @@ object FirstPrinciples extends App {
   implicit val materializer: ActorMaterializer = ActorMaterializer()
 
   // Source
-  val source = Source(1 to 10)
+  val source: Source[Int, NotUsed] = Source(1 to 10)
 
   // Sink
-  val sink = Sink.foreach[Int](println)
+  val sink: Sink[Int, Future[Done]] = Sink.foreach[Int](println)
 
   // Graph is the definition of an Akka stream
-  val graph = source.to(sink)
+  val graph:  RunnableGraph[NotUsed] = source.to(sink)
 
-  // graph.run()
+  //graph.run()
 
   /**
     * Flows
     * - They transform elements
     */
 
-  val flow = Flow[Int].map(x => x + 1)
+  val flow: Flow[Int, Int, NotUsed] = Flow[Int].map(x => x + 1)
 
-  val sourceWithFlow = source.via(flow)
+  val sourceWithFlow: Source[Int , NotUsed] = source.via(flow)
 
-  val flowWithSink = flow.to(sink)
+  val flowWithSink: Sink[Int, NotUsed] = flow.to(sink)
 
 //  sourceWithFlow.to(sink).run()
 //  source.to(flowWithSink).run()
@@ -54,36 +55,36 @@ object FirstPrinciples extends App {
     * Kinds of Sources
     */
   // Finite
-  val finiteSource = Source.single(1)
-  val anotherFiniteSource = Source(List(1, 2, 3))
-  val emptySource = Source.empty[Int]
+  val finiteSource: Source[Int, NotUsed] = Source.single(1)
+  val anotherFiniteSource: Source[Int, NotUsed] = Source(List(1, 2, 3))
+  val emptySource: Source[Int, NotUsed] = Source.empty[Int]
 
   // Infinite Source
-  val infiniteSource = Source(Stream.from(1)) // Do NOT Confuse Akka Stream with a "collection" Stream
+  val infiniteSource: Source[Int, NotUsed] = Source(Stream.from(1)) // Do NOT Confuse Akka Stream with a "collection" Stream
 
   import scala.concurrent.ExecutionContext.Implicits.global
-  val futureSource = Source.fromFuture(Future(42))
+  val futureSource: Source[Int, NotUsed] = Source.fromFuture(Future(42))
 
   /**
     * Sinks
     */
 
-  val boringSink = Sink.ignore
-  val forEachSink = Sink.foreach[String](println)
-  val headSink = Sink.head[Int] // Retrieves head and then closes the Stream
-  val foldSink = Sink.fold[Int, Int](0)((a,b) => a + b)
+  val boringSink: Sink[Any, Future[Done]] = Sink.ignore
+  val forEachSink: Sink[String, Future[Done]] = Sink.foreach[String](println)
+  val headSink: Sink[Int, Future[Int]] = Sink.head[Int] // Retrieves head and then closes the Stream
+  val foldSink: Sink[Int, Future[Int]] = Sink.fold[Int, Int](0)((a,b) => a + b)
 
   /**
     * Flows
     */
-  val mapFlow = Flow[Int].map(x => 2 * x)
-  val takeFlow = Flow[Int].take(5)
+  val mapFlow: Flow[Int, Int, NotUsed] = Flow[Int].map(x => 2 * x)
+  val takeFlow: Flow[Int, Int, NotUsed] = Flow[Int].take(5)
   // have drop, filter
   // NOT have flatMap
 
   // source -> flow -> ..... -> sink
 
-  val doubleFlowGraph = source.via(mapFlow).via(takeFlow).to(sink)
+  val doubleFlowGraph: RunnableGraph[NotUsed] = source.via(mapFlow).via(takeFlow).to(sink)
   // doubleFlowGraph.run()
 
   // Syntactic Sugars
@@ -103,11 +104,5 @@ object FirstPrinciples extends App {
   val nameSource = Source(List("Kamran", "ali", "palash", "daud"))
 
   nameSource.filter(_.length > 5).take(2).runForeach(println)
-
-
-
-
-
-
 
 }

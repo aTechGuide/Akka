@@ -1,8 +1,9 @@
 package primer
 
+import akka.{Done, NotUsed}
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
-import akka.stream.scaladsl.{Flow, Keep, Sink, Source}
+import akka.stream.scaladsl.{Flow, Keep, RunnableGraph, Sink, Source}
 
 import scala.concurrent.Future
 import scala.util.{Failure, Success}
@@ -21,18 +22,18 @@ import scala.util.{Failure, Success}
 
 object MaterializingStreams extends App {
 
-  implicit val system = ActorSystem("MaterializingStreams")
+  implicit val system: ActorSystem = ActorSystem("MaterializingStreams")
 
   // Materializer is one of these objects that allocates the right resources to running an Akka stream
-  implicit val materializer = ActorMaterializer()
+  implicit val materializer: ActorMaterializer = ActorMaterializer()
 
-  val simpleGraph = Source(1 to 10).to(Sink.foreach(println))
+  val simpleGraph: RunnableGraph[NotUsed] = Source(1 to 10).to(Sink.foreach(println))
 
   // Calling of the `run` method is an expression and the result of that expression is called a materialized value.
-//  val simpleMaterializedValue = simpleGraph.run()
+  val simpleMaterializedValue: NotUsed = simpleGraph.run()
 
-  val source = Source(1 to 10)
-  val sink = Sink.reduce[Int]((a,b) => a + b)
+  val source: Source[Int, NotUsed] = Source(1 to 10)
+  val sink: Sink[Int, Future[Int]] = Sink.reduce[Int]((a,b) => a + b)
 
   // `sumFuture` is the materialized value obtained by running a graph connecting source and sync
   val sumFuture: Future[Int] = source.runWith(sink)
@@ -51,13 +52,13 @@ object MaterializingStreams extends App {
     * - By default leftmost materialized value is kept in the graph.
     * - But we can have further control over which materialized value we can choose by using different methods.
     */
-  val simpleSource = Source(1 to 10)
-  val simpleFlow = Flow[Int].map(x => x + 1)
-  val simpleSink = Sink.foreach[Int](println)
+  val simpleSource: Source[Int , NotUsed] = Source(1 to 10)
+  val simpleFlow: Flow[Int, Int, NotUsed] = Flow[Int].map(x => x + 1)
+  val simpleSink: Sink[Int, Future[Done]] = Sink.foreach[Int](println)
 
-  val graph = simpleSource.viaMat(simpleFlow)(Keep.right).toMat(simpleSink)(Keep.right)
+  val graph: RunnableGraph[Future[Done]] = simpleSource.viaMat(simpleFlow)(Keep.right).toMat(simpleSink)(Keep.right)
   graph.run().onComplete {
-    case Success(_) => println("Stream Processing Finished")
+    case Success(value) => println(s"Stream Processing Finished with value: $value") // Prints -> Stream Processing Finished with value: Done
     case Failure(exception) => println(s"Stream Processing failed $exception")
   }
 
@@ -83,6 +84,7 @@ object MaterializingStreams extends App {
   val f2 = Source(1 to 10).runWith(Sink.last[Int])
   f1.onComplete {
     case Success(lastValue) => println(s"lastValue = $lastValue")
+    case Failure(exception) => println(s"Sone $exception")
   }
 
   // 2
