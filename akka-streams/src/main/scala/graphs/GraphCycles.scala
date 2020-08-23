@@ -4,7 +4,7 @@ import akka.NotUsed
 import akka.actor.ActorSystem
 import akka.stream.scaladsl.MergePreferred.MergePreferredShape
 import akka.stream.{ActorMaterializer, ClosedShape, FlowShape, Graph, OverflowStrategy, UniformFanInShape}
-import akka.stream.scaladsl.{Broadcast, Flow, GraphDSL, Merge, MergePreferred, RunnableGraph, Sink, Source, Zip, ZipWith}
+import akka.stream.scaladsl.{Broadcast, Flow, GraphDSL, Merge, MergePreferred, RunnableGraph, Sink, Source, Zip}
 
 /**
   * Streams Lecture 14 [Graph Cycles]
