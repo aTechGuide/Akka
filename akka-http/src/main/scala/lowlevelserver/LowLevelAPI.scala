@@ -3,7 +3,7 @@ package lowlevelserver
 import akka.Done
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
-import akka.http.scaladsl.Http.IncomingConnection
+import akka.http.scaladsl.Http.{IncomingConnection, ServerBinding}
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity, HttpMethods, HttpRequest, HttpResponse, StatusCodes, Uri}
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Flow, Sink, Source}
@@ -25,8 +25,8 @@ object LowLevelAPI extends App {
   implicit val materializer: ActorMaterializer = ActorMaterializer()
   import system.dispatcher
 
-  val serverSource: Source[Http.IncomingConnection, Future[Http.ServerBinding]] =
-    Http().bind("localhost", 8000 )
+  val serverSource: Source[IncomingConnection, Future[ServerBinding]] =
+    Http().bind("localhost", 8000)
   // ^ Source of Connections with Materialized value of Future[Http.ServerBinding] which will allow us to unbind or shut down the server
 
   val connectionSink = Sink.foreach[IncomingConnection] { connection =>
@@ -35,7 +35,7 @@ object LowLevelAPI extends App {
 
   // In order to actually start the server we need to materialize a RunnableGraph from `serverSource` to  `connectionSink`
 
-  val serverBindingFuture: Future[Http.ServerBinding] = serverSource.to(connectionSink).run()
+  val serverBindingFuture: Future[ServerBinding] = serverSource.to(connectionSink).run()
   serverBindingFuture.onComplete {
     case Success(binding) =>
       println("Server binding successful")
@@ -85,8 +85,9 @@ object LowLevelAPI extends App {
 
   // val value: Future[Done] = Http().bind("localhost", 8080).runWith(httpSyncConnectionHandler)
   // ^ It automatically starts and runs a Runnable Graph.
-  // So remember `Http().bind("localhost", 8080)` is a source of incoming connection.
-  // And `httpSyncConnectionHandler` is a sink of incoming connection.
+
+  // - `Http().bind("localhost", 8080)` is a Source of incoming connection.
+  // - `httpSyncConnectionHandler` is a Sink of incoming connection.
   // So a source run with a sink is actually Akka stream.
 
   // Short Hand version of above
