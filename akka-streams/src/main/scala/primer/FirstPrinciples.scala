@@ -28,7 +28,7 @@ object FirstPrinciples extends App {
   val sink: Sink[Int, Future[Done]] = Sink.foreach[Int](println)
 
   // Graph is the definition of an Akka stream
-  val graph:  RunnableGraph[NotUsed] = source.to(sink)
+  val graph: RunnableGraph[NotUsed] = source.to(sink)
 
   // graph.run()
 

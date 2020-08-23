@@ -52,7 +52,7 @@ object OpenGraphs extends App {
   val sink1 = Sink.foreach[Int](x => println(s"Meaningful thing 1: $x"))
   val sink2 = Sink.foreach[Int](x => println(s"Meaningful thing 2: $x"))
 
-  val sinkGraph = Sink.fromGraph(
+  val sinkGraph: Sink[Int, NotUsed] = Sink.fromGraph(
     GraphDSL.create() {implicit builder =>
       import GraphDSL.Implicits._
 
@@ -162,7 +162,7 @@ object OpenGraphs extends App {
       import GraphDSL.Implicits._
 
       // Step 2 Declare Components
-      val max3Shape = builder.add(max3StaticGraph)
+      val max3Shape: UniformFanInShape[Int, Int] = builder.add(max3StaticGraph)
 
       // Step 3 Tie them
       source1 ~> max3Shape.in(0)

@@ -2,7 +2,7 @@ package graphs
 
 import akka.{Done, NotUsed}
 import akka.actor.ActorSystem
-import akka.stream.{ActorMaterializer, ClosedShape, FanInShape2, UniformFanOutShape}
+import akka.stream.{ActorMaterializer, ClosedShape, FanInShape2, UniformFanInShape, UniformFanOutShape}
 import akka.stream.scaladsl.{Balance, Broadcast, Flow, GraphDSL, Merge, RunnableGraph, Sink, Source, Zip}
 
 import scala.concurrent.Future
@@ -65,7 +65,7 @@ object GraphBasics extends App {
     GraphDSL.create() { implicit builder =>
       import GraphDSL.Implicits._
 
-      val broadcast = builder.add(Broadcast[Int](2))
+      val broadcast: UniformFanOutShape[Int, Int] = builder.add(Broadcast[Int](2))
 
       input ~> broadcast ~> firstSink // implicit port numbering
                broadcast ~> secondSink
@@ -100,8 +100,8 @@ object GraphBasics extends App {
     GraphDSL.create() { implicit builder =>
       import GraphDSL.Implicits._
 
-      val merge = builder.add(Merge[Int](2))
-      val balance = builder.add(Balance[Int](2))
+      val merge: UniformFanInShape[Int, Int] = builder.add(Merge[Int](2))
+      val balance: UniformFanOutShape[Int, Int] = builder.add(Balance[Int](2))
 
       fastSource ~> merge
       slowSource ~> merge
